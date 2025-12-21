@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Layout } from '@/components/layout';
 import {
@@ -26,7 +26,6 @@ function App() {
               <Route path="base64" element={<Base64Page />} />
               <Route path="share-tool" element={<ShareToolPage />} />
             </Route>
-            <Route path="share" element={<Navigate to="/tools/share-tool" replace />} />
             <Route path="progress" element={<ProgressPage />} />
             <Route path="about" element={<AboutPage />} />
           </Route>

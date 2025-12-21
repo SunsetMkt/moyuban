@@ -11,9 +11,12 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         navigateFallbackDenylist: [/^\/api/, /^\/docs/, /^\/openapi\.json/],
+        skipWaiting: true,
+        clientsClaim: true,
       },
       manifest: {
         name: '摸鱼办',

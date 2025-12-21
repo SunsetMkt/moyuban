@@ -1,29 +1,54 @@
 import { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import LZString from 'lz-string';
-import { Copy, Check, Share2, Edit3, Eye } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { QRCodeSVG } from 'qrcode.react';
+import { Copy, Check, Share2, Edit3, Eye } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ToolLayout } from '@/components/tool-layout';
 import { useClipboard, useIsMobile } from '@/hooks';
 
 type ContentType = 'text' | 'html' | 'markdown';
 
 export function ShareToolPage() {
-  const [content, setContent] = useState('');
-  const [contentType, setContentType] = useState<ContentType>('text');
-  const [isEditing, setIsEditing] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Parse initial state only once on mount using lazy initialization
+  const [content, setContent] = useState(() => {
+    const encodedContent = searchParams.get('content');
+    if (encodedContent) {
+      try {
+        return LZString.decompressFromEncodedURIComponent(encodedContent) || '';
+      } catch {
+        return '';
+      }
+    }
+    return '';
+  });
+
+  const [contentType, setContentType] = useState<ContentType>(() => {
+    const type = searchParams.get('contentType') as ContentType | null;
+    if (type && ['text', 'html', 'markdown'].includes(type)) {
+      return type;
+    }
+    return 'text';
+  });
+
+  const [isEditing, setIsEditing] = useState(() => {
+    const encodedContent = searchParams.get('content');
+    return !encodedContent;
+  });
+
   const { copied, copy } = useClipboard();
   const isMobile = useIsMobile();
 
   const shareUrl = useMemo(() => {
     if (!content) return '';
     const compressed = LZString.compressToEncodedURIComponent(content);
-    const url = new URL(window.location.origin + '/share');
+    const url = new URL(window.location.href);
     url.searchParams.set('content', compressed);
     url.searchParams.set('contentType', contentType);
     return url.toString();
@@ -31,6 +56,11 @@ export function ShareToolPage() {
 
   const handleShare = () => {
     if (!content) return;
+    const compressed = LZString.compressToEncodedURIComponent(content);
+    setSearchParams({
+      content: compressed,
+      contentType,
+    });
     copy(shareUrl);
   };
 
@@ -57,9 +87,32 @@ export function ShareToolPage() {
   const qrSize = isMobile ? Math.min(window.innerWidth - 80, 200) : 200;
 
   return (
-    <ToolLayout title="分享工具" description="生成分享链接">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+    <div className="container max-w-screen-xl mx-auto px-4 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">分享工具</h1>
+        <Button
+          variant="outline"
+          onClick={() => setIsEditing(!isEditing)}
+        >
+          {isEditing ? (
+            <>
+              <Eye className="h-4 w-4 mr-2" />
+              预览
+            </>
+          ) : (
+            <>
+              <Edit3 className="h-4 w-4 mr-2" />
+              编辑
+            </>
+          )}
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">内容类型</CardTitle>
+        </CardHeader>
+        <CardContent>
           <Tabs value={contentType} onValueChange={(v) => setContentType(v as ContentType)}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="text">纯文本</TabsTrigger>
@@ -67,27 +120,16 @@ export function ShareToolPage() {
               <TabsTrigger value="markdown">Markdown</TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditing(!isEditing)}
-            className="ml-2"
-          >
-            {isEditing ? (
-              <>
-                <Eye className="h-4 w-4 mr-2" />
-                预览
-              </>
-            ) : (
-              <>
-                <Edit3 className="h-4 w-4 mr-2" />
-                编辑
-              </>
-            )}
-          </Button>
-        </div>
+        </CardContent>
+      </Card>
 
-        <div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">
+            {isEditing ? '编辑内容' : '预览'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           {isEditing ? (
             <Textarea
               value={content}
@@ -101,10 +143,15 @@ export function ShareToolPage() {
               {content ? renderContent() : <span className="text-muted-foreground">暂无内容</span>}
             </div>
           )}
-        </div>
+        </CardContent>
+      </Card>
 
-        {content && (
-          <div className="space-y-4">
+      {content && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">分享</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="flex gap-2">
               <Button onClick={handleShare} className="flex-1">
                 <Share2 className="h-4 w-4 mr-2" />
@@ -118,23 +165,17 @@ export function ShareToolPage() {
             </div>
             {shareUrl && (
               <>
-                <div className="space-y-2">
-                  <Label>分享链接</Label>
-                  <div className="p-3 bg-muted rounded-md">
-                    <p className="text-sm font-mono break-all">{shareUrl}</p>
-                  </div>
+                <div className="p-3 bg-muted rounded-md">
+                  <p className="text-sm font-mono break-all">{shareUrl}</p>
                 </div>
-                <div className="space-y-2">
-                  <Label>二维码</Label>
-                  <div className="flex justify-center p-4 bg-white rounded-md">
-                    <QRCodeSVG value={shareUrl} size={qrSize} />
-                  </div>
+                <div className="flex justify-center p-4 bg-white rounded-md">
+                  <QRCodeSVG value={shareUrl} size={qrSize} />
                 </div>
               </>
             )}
-          </div>
-        )}
-      </div>
-    </ToolLayout>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
