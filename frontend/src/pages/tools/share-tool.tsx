@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import LZString from 'lz-string';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { QRCodeSVG } from 'qrcode.react';
-import { Copy, Check, Share2, Edit3, Eye } from 'lucide-react';
+import { Copy, Check, Share2, Edit3, Eye, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,6 +15,7 @@ type ContentType = 'text' | 'html' | 'markdown';
 
 export function ShareToolPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // Parse initial state only once on mount using lazy initialization
   const [content, setContent] = useState(() => {
@@ -88,8 +89,16 @@ export function ShareToolPage() {
 
   return (
     <div className="container max-w-screen-xl mx-auto px-4 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">分享工具</h1>
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/tools')}
+          aria-label="返回工具列表"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-2xl font-bold flex-1">分享工具</h1>
         <Button
           variant="outline"
           onClick={() => setIsEditing(!isEditing)}

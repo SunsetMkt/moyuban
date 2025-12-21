@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Base64 } from 'js-base64';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -8,57 +8,120 @@ import { ToolLayout } from '@/components/tool-layout';
 import { useClipboard } from '@/hooks';
 
 export function Base64Page() {
-  const [input, setInput] = useState('');
-  const [output, setOutput] = useState('');
-  const { copied, copy } = useClipboard();
+  const [leftText, setLeftText] = useState('');
+  const [rightText, setRightText] = useState('');
+  const [error, setError] = useState('');
+  const { copied: copiedLeft, copy: copyLeft } = useClipboard();
+  const { copied: copiedRight, copy: copyRight } = useClipboard();
 
   const encode = () => {
+    setError('');
     try {
-      setOutput(Base64.encode(input));
+      if (!leftText) {
+        setRightText('');
+        return;
+      }
+      const result = Base64.encode(leftText);
+      if (!result) {
+        setError('编码失败：结果为空');
+        return;
+      }
+      setRightText(result);
     } catch (err) {
-      setOutput(`编码失败: ${err}`);
+      setError(`编码失败: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
   const decode = () => {
+    setError('');
     try {
-      setOutput(Base64.decode(input));
+      const cleanInput = rightText.replace(/\s/g, '');
+      if (!cleanInput) {
+        setLeftText('');
+        return;
+      }
+
+      // 验证是否是合法的 Base64 字符串
+      const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+      if (!base64Regex.test(cleanInput)) {
+        setError('解码失败：输入包含非法字符，请确保是有效的 Base64 字符串');
+        return;
+      }
+
+      const result = Base64.decode(cleanInput);
+      if (!result && cleanInput) {
+        setError('解码失败：无法解码该 Base64 字符串');
+        return;
+      }
+      setLeftText(result);
     } catch (err) {
-      setOutput(`解码失败: ${err}`);
+      setError(`解码失败: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
   return (
     <ToolLayout title="Base64 编码/解码" description="Base64 编码解码工具">
       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label>输入</Label>
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="输入需要编码/解码的内容..."
-            rows={5}
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={encode}>
-            Base64 编码
-          </Button>
-          <Button variant="secondary" onClick={decode}>
-            Base64 解码
-          </Button>
-        </div>
-        {output && (
-          <div className="space-y-2">
-            <Label>输出</Label>
-            <div className="flex gap-2">
-              <Textarea value={output} readOnly rows={5} className="font-mono" />
-              <Button variant="outline" onClick={() => copy(output)} className="shrink-0">
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              </Button>
-            </div>
+        {error && (
+          <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm">
+            {error}
           </div>
         )}
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+        {/* 左侧：原文 */}
+        <div className="space-y-2 flex-1">
+          <div className="flex items-center justify-between">
+            <Label>原文</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => copyLeft(leftText)}
+              disabled={!leftText}
+            >
+              {copiedLeft ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </div>
+          <Textarea
+            value={leftText}
+            onChange={(e) => setLeftText(e.target.value)}
+            placeholder="输入原文..."
+            rows={10}
+            className="font-mono"
+          />
+        </div>
+
+        {/* 中间：转换按钮 */}
+        <div className="flex md:flex-col gap-2 justify-center md:mt-8">
+          <Button onClick={encode} disabled={!leftText} className="whitespace-nowrap">
+            编码 →
+          </Button>
+          <Button onClick={decode} disabled={!rightText} className="whitespace-nowrap">
+            ← 解码
+          </Button>
+        </div>
+
+        {/* 右侧：Base64 */}
+        <div className="space-y-2 flex-1">
+          <div className="flex items-center justify-between">
+            <Label>Base64</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => copyRight(rightText)}
+              disabled={!rightText}
+            >
+              {copiedRight ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </div>
+          <Textarea
+            value={rightText}
+            onChange={(e) => setRightText(e.target.value)}
+            placeholder="输入 Base64..."
+            rows={10}
+            className="font-mono"
+          />
+        </div>
+        </div>
       </div>
     </ToolLayout>
   );

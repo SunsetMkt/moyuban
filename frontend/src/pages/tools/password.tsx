@@ -30,17 +30,15 @@ export function PasswordPage() {
     <ToolLayout title="密码生成" description="生成安全密码">
       <div className="space-y-4">
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label>密码长度</Label>
-            <Input
-              type="number"
-              min={8}
-              max={64}
-              value={length}
-              onChange={(e) => setLength(Math.max(8, Math.min(64, Number(e.target.value) || 8)))}
-              className="w-20 text-center"
-            />
-          </div>
+          <Label>密码长度</Label>
+          <Input
+            type="number"
+            min={8}
+            max={64}
+            value={length}
+            onChange={(e) => setLength(Math.max(8, Math.min(64, Number(e.target.value) || 8)))}
+            className="w-full"
+          />
           <Slider
             value={[length]}
             onValueChange={([value]) => setLength(value)}

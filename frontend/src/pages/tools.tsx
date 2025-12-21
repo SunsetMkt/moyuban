@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Lock, Link2, FileCode, Share2 } from 'lucide-react';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 
 const TOOLS = [
   {
@@ -43,20 +43,18 @@ export function ToolsPage() {
         {TOOLS.map(({ id, title, description, icon: Icon, path }) => (
           <Card
             key={id}
-            className="cursor-pointer hover:shadow-lg transition-shadow min-h-[120px]"
+            className="cursor-pointer hover:shadow-lg transition-shadow min-h-[120px] p-6"
             onClick={() => navigate(path)}
           >
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Icon className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">{title}</CardTitle>
-                  <CardDescription>{description}</CardDescription>
-                </div>
+            <div className="flex items-center gap-3 w-full">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Icon className="h-6 w-6 text-primary" />
               </div>
-            </CardHeader>
+              <div>
+                <div className="font-semibold leading-none tracking-tight text-lg">{title}</div>
+                <div className="text-sm text-muted-foreground mt-1.5">{description}</div>
+              </div>
+            </div>
           </Card>
         ))}
       </div>
